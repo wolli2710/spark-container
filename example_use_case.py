@@ -14,11 +14,15 @@ from pyspark.sql.types import *
 
 class ExampleUseCase():
     float_formatter = lambda self, x: "%.2f" % x
-    
+
     def __init__(self, spark_session, shortage):
         self.spark_session = spark_session
         self.shortage = shortage
-        self.file_path = self.file_path(shortage, "results/") + ".png"
+        self.result_file_path = self.file_path(shortage, "results/") + ".png"
+
+    def file_path(self, file_name, dir=""):
+        base_path = os.path.dirname(os.path.realpath(__file__)) + "/tests/fixtures/"
+        return os.path.dirname(base_path) + "/" + dir + file_name
 
     def draw_result(self):
         cSchema = StructType([StructField("Date", StringType())\
@@ -37,11 +41,13 @@ class ExampleUseCase():
         plt.savefig(self.file_path)
         plt.clf()
 
-    def read_file(self, spark_session, input_file, file_format='parquet', sep=',', encoding='utf-8'):
+    def read_file(self, input_file, file_format='parquet', sep=',', encoding='utf-8'):
+        if not (os.path.isfile(input_file)):
+            return
         if file_format == 'parquet':
-            return spark_session.read.parquet(input_file)
+            return self.spark_session.read.parquet(input_file)
         elif file_format == 'csv':
-            return spark_session.read.csv(input_file, header=True, sep=sep, encoding=encoding)
+            return self.spark_session.read.csv(input_file, header=True, sep=sep, encoding=encoding)
 
     def write_file(self, spark_session, input_file, inputData, file_format, mode=None):
         if file_format == 'parquet':
@@ -52,12 +58,7 @@ class ExampleUseCase():
     def get_stock_data_from_web_source(self):
         response = requests.get("https://finance.yahoo.com/quote/"+self.shortage+"/history?p="+self.shortage)
         self.data = self.parse_request(response.text)
-        n = np.array(self.data)
-        np.set_printoptions(formatter={'float_kind':self.float_formatter})
-        n = n.astype(np.float)
-        self.average = np.average(n, axis=0)
-        self.median = np.median(n, axis=0)
-        self.last = n[0]
+        self.prepare_data()
 
     def parse_request(self, html_doc):
         data = []
@@ -68,23 +69,44 @@ class ExampleUseCase():
         for row in rows:
             cols = row.find_all('td')
             cols = [ele.text for ele in cols]
-            if len(cols) >= 4:
-                data.insert(0, [ele.replace(",", "").replace("-", "0") for ele in cols[1:-1] if ele])
+            self.prepare_rows(cols, data)
         return data
 
-    def file_path(self, file_name, dir=""):
-        base_path = os.path.dirname(os.path.realpath(__file__)) + "/tests/fixtures/"
-        if not (os.path.exists(base_path+dir)):
-            os.makedirs(base_path+dir)
-        return os.path.dirname(base_path) + "/" + dir + file_name
+    def prepare_rows(self, row, data):
+        if len(row) >= 4:
+            data.insert(0, [ele.replace(",", "").replace("-", "0") for ele in row[1:-1] if ele])
+
+    def get_stock_data_from_file_source(self):
+        data = []
+        file_name = self.shortage + ".csv"
+        file_p = self.file_path(file_name, "input/")
+        result = self.read_file(file_p, "csv")
+        if result:
+            current_list = result.rdd.map(lambda row : list(row) ).collect()
+            for row in current_list:
+                self.prepare_rows(row, data)
+            self.data = data
+            self.prepare_data()
+
+    def prepare_data(self):
+        if( hasattr(self, "data") ):
+            n = np.array(self.data)
+            np.set_printoptions(formatter={'float_kind':self.float_formatter})
+            n = n.astype(np.float)
+            self.average = np.average(n, axis=0)
+            self.median = np.median(n, axis=0)
+            self.std = np.std(n, axis=0)
+            self.last = n[0]
 
     def predict_low_cost_high_value(self):
-        print(self.shortage)
-        print(self.last - self.median)
-        print(self.last - self.average)
-        print(self.median)
-        print(self.average)
-        print(self.last)
+        if( hasattr(self, "data") ):
+            print(self.shortage)
+            print(self.last - self.median)
+            print(self.last - self.average)
+            print(self.median)
+            print(self.average)
+            print(self.last)
+            print(self.std)
 
 # if __name__ == '__main__':
 #     parser = argparse.ArgumentParser()
