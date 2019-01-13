@@ -1,15 +1,20 @@
+
+from __future__ import division
+
 import argparse
 from datetime import date
 import pyspark.sql.functions as func
 import matplotlib.pyplot as plt
 import os
+import numpy as np
 
 import requests
 from bs4 import BeautifulSoup
-
 from pyspark.sql.types import *
 
 class ExampleUseCase():
+    float_formatter = lambda self, x: "%.2f" % x
+    
     def __init__(self, spark_session, shortage):
         self.spark_session = spark_session
         self.shortage = shortage
@@ -47,6 +52,12 @@ class ExampleUseCase():
     def get_stock_data_from_web_source(self):
         response = requests.get("https://finance.yahoo.com/quote/"+self.shortage+"/history?p="+self.shortage)
         self.data = self.parse_request(response.text)
+        n = np.array(self.data)
+        np.set_printoptions(formatter={'float_kind':self.float_formatter})
+        n = n.astype(np.float)
+        self.average = np.average(n, axis=0)
+        self.median = np.median(n, axis=0)
+        self.last = n[0]
 
     def parse_request(self, html_doc):
         data = []
@@ -58,7 +69,7 @@ class ExampleUseCase():
             cols = row.find_all('td')
             cols = [ele.text for ele in cols]
             if len(cols) >= 4:
-                data.insert(0, [ele for ele in cols if ele])
+                data.insert(0, [ele.replace(",", "").replace("-", "0") for ele in cols[1:-1] if ele])
         return data
 
     def file_path(self, file_name, dir=""):
@@ -66,7 +77,15 @@ class ExampleUseCase():
         if not (os.path.exists(base_path+dir)):
             os.makedirs(base_path+dir)
         return os.path.dirname(base_path) + "/" + dir + file_name
-#
+
+    def predict_low_cost_high_value(self):
+        print(self.shortage)
+        print(self.last - self.median)
+        print(self.last - self.average)
+        print(self.median)
+        print(self.average)
+        print(self.last)
+
 # if __name__ == '__main__':
 #     parser = argparse.ArgumentParser()
 #     parser.add_argument('-source_fahrzeug', required=True)
