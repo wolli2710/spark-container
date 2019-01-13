@@ -1,4 +1,6 @@
+
 from __future__ import division
+
 import argparse
 from datetime import date
 import pyspark.sql.functions as func
@@ -12,7 +14,7 @@ from pyspark.sql.types import *
 
 class ExampleUseCase():
     float_formatter = lambda self, x: "%.2f" % x
-
+    
     def __init__(self, spark_session, shortage):
         self.spark_session = spark_session
         self.shortage = shortage
