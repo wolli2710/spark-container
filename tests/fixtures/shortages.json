@@ -2,7 +2,6 @@
   "shortages": [
     "VOW3.DE",
     "PAH3.DE",
-    "O3P.DE",
     "DAI.DE",
     "OMV.VI",
     "TSLA",
@@ -14,6 +13,7 @@
     "EVN.VI",
     "ANDR.VI",
     "POS.VI",
+    "POST.VI",
     "GOLD"
   ]
 }
