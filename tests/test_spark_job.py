@@ -45,21 +45,6 @@ class SimpleTest(PySparkTest):
         for shortage in data["shortages"]:
             use_case_objects.append(ExampleUseCase(spark_session=self.spark, shortage=shortage))
         [data.get_stock_data_from_web_source() for data in use_case_objects]
+        # [data.get_stock_data_from_file_source() for data in use_case_objects]
         [data.predict_low_cost_high_value() for data in use_case_objects]
         # [data.draw_result() for data in use_case_objects]
-
-    # def test_write_to_hdfs(self):
-    #     cSchema = StructType([StructField("Name", StringType())\
-    #                   ,StructField("Value", StringType())])
-    #     data = [('First', 1), ('Second', 2), ('Third', 3), ('Fourth', 4), ('Fifth', 5)]
-    #     df = self.spark.createDataFrame(data, schema=cSchema)
-    #     path = file_path("example.csv", "tests/results")
-    #     df.write.csv(path)
-    #     df_load = self.spark.read.csv(path)
-    #     df_load.show()
-    #     cmd = 'hdfs dfs -ls tests/results/example.csv'.split() # cmd must be an array of arguments
-    #     files = subprocess.check_output(cmd).strip().split('\n')
-    #     for path in files:
-    #       print (path)
-    #     self.assertEqual(1, 1)
-    
