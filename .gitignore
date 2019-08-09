@@ -2,6 +2,6 @@ __pycache__/*
 .ipynb_checkpoints/*
 dist
 *.egg-info
-tests/__pycache__
+*/__pycache__
 derby.log
 metastore_db/*
