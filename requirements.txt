@@ -7,6 +7,9 @@ numpy
 beautifulsoup4
 requests
 selenium
+pyalgotrade
+googlefinance.get
+lxml
 
 #
 ###### Requirements with Version Specifiers ######

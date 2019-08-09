@@ -1,4 +1,3 @@
-
 from __future__ import division
 
 import argparse
@@ -7,7 +6,7 @@ import pyspark.sql.functions as func
 import matplotlib.pyplot as plt
 import os
 import numpy as np
-
+import json
 import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver
@@ -17,14 +16,28 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 from pyspark.sql.types import *
+import importlib
 
 class ExampleUseCase():
     float_formatter = lambda self, x: "%.2f" % x
 
-    def __init__(self, spark_session, shortage):
+    def __init__(self, spark_session, shortage, obj):
         self.spark_session = spark_session
         self.shortage = shortage
+        self.obj = obj
         self.result_file_path = self.file_path(shortage, "results/") + ".png"
+        self.helpers = {}
+        self.load_helpers()
+        for key,method in self.helpers.items():
+            method()
+
+    def load_helpers(self):
+        with open('helpers/list.json') as json_file:
+            data = json.load(json_file)
+            for obj in data:
+                mod = importlib.import_module(obj['path'])
+                met = getattr(mod, obj['name'])
+                self.helpers[obj['name']] = met
 
     def file_path(self, file_name, dir=""):
         base_path = os.path.dirname(os.path.realpath(__file__)) + "/tests/fixtures/"
@@ -63,10 +76,10 @@ class ExampleUseCase():
 
     def get_stock_data_from_web_source(self):
         response = requests.get("https://finance.yahoo.com/quote/"+self.shortage+"/history?p="+self.shortage)
-        self.data = self.parse_request(response.text)
+        self.data = self.parse_yahoo_request(response.text)
         self.prepare_data()
 
-    def parse_request(self, html_doc):
+    def parse_yahoo_request(self, html_doc):
         data = []
         soup = BeautifulSoup(html_doc, 'html.parser')
         table = soup.find('table', attrs={'data-test':'historical-prices'})
@@ -101,18 +114,25 @@ class ExampleUseCase():
             n = n.astype(np.float)
             self.average = np.average(n, axis=0)
             self.median = np.median(n, axis=0)
+            self.max = np.max(n, axis=0)
             self.std = np.std(n, axis=0)
-            self.last = n[0]
+            self.last = n[-1]
 
     def predict_low_cost_high_value(self):
         if( hasattr(self, "data") ):
-            print(self.shortage)
-            print(self.last - self.median)
-            print(self.last - self.average)
-            print(self.median)
-            print(self.average)
+            threshold = 80.0
+            # if(  ( any( x < threshold for x in (100/self.max) * self.last) )  ):
+            print(self.obj["name"])
+            # print(self.last - self.median)
+            # print(self.last - self.average)
+            # print(self.median)
+            # print(self.average)
+            # print(self.last)
+            # print(self.std)
+            print(self.max)
             print(self.last)
-            print(self.std)
+            print( ( (100/self.average) * self.last ) )
+            print( ( (100/self.max) * self.last ) )
 
 # if __name__ == '__main__':
 #     parser = argparse.ArgumentParser()

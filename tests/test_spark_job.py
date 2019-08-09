@@ -12,7 +12,7 @@ from base_spark_test import PySparkTest
 from operator import add
 from example_use_case import ExampleUseCase
 from pyspark.sql.types import *
-
+from googlefinance.get import get_code
 
 def file_path(file_name, dir=""):
     base_path = os.path.dirname(os.path.realpath(__file__))
@@ -33,15 +33,15 @@ class SimpleTest(PySparkTest):
     #     input_data = obj.read_file(self.spark, input_file, file_format)
     #     result = input_data.select("*")
 
-    def test_get_stock_data_from_file(self):
-        use_case_objects = []
-        data = {}
-        file_paths = glob.glob("./tests/fixtures/input/*.csv")
-        data["shortages"] = [p[p.rfind("/")+1   :p.rfind(".csv")] for p in file_paths]
-        for shortage in data["shortages"]:
-            use_case_objects.append(ExampleUseCase(spark_session=self.spark, shortage=shortage))
-        [data.get_stock_data_from_file_source() for data in use_case_objects]
-        [data.predict_low_cost_high_value() for data in use_case_objects]
+    # def test_get_stock_data_from_file(self):
+    #     use_case_objects = []
+    #     data = {}
+    #     file_paths = glob.glob("./tests/fixtures/input/*.csv")
+    #     data["shortages"] = [p[p.rfind("/")+1   :p.rfind(".csv")] for p in file_paths]
+    #     for shortage in data["shortages"]:
+    #         use_case_objects.append(ExampleUseCase(spark_session=self.spark, shortage=shortage))
+    #     [data.get_stock_data_from_file_source() for data in use_case_objects]
+    #     [data.predict_low_cost_high_value() for data in use_case_objects]
 
 
     # @patch('alfred_aftersales_uc3_pickerl.read_file', return_value=self.spark.createDataFrame())
@@ -53,10 +53,17 @@ class SimpleTest(PySparkTest):
         file_p = file_path("shortages.json", "tests/fixtures")
         with open(file_p) as f:
             data = json.load(f)
-        for shortage in data["shortages"]:
-            use_case_objects.append(ExampleUseCase(spark_session=self.spark, shortage=shortage))
+        for shortage in data.keys():
+            use_case_objects.append(ExampleUseCase(spark_session=self.spark, shortage=shortage, obj=data[shortage]))
+
+        [data.get_company_list_vi("") for data in use_case_objects]
+
+
         [data.get_stock_data_from_web_source() for data in use_case_objects]
         [data.predict_low_cost_high_value() for data in use_case_objects]
+
+    # def test_google_get(self):
+        # print([x for x in get_code('NASDAQ')])
 
     # def test_draw_result(self):
     #     use_case_objects = []
@@ -68,4 +75,4 @@ class SimpleTest(PySparkTest):
     #     [data.get_stock_data_from_file_source() for data in use_case_objects]
     #     [data.predict_low_cost_high_value() for data in use_case_objects]
     #     # [data.draw_result() for data in use_case_objects]
-    # 
+    #
