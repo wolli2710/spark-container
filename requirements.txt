@@ -6,6 +6,9 @@ matplotlib
 numpy
 beautifulsoup4
 requests
+pyalgotrade
+googlefinance.get
+lxml
 
 #
 ###### Requirements with Version Specifiers ######

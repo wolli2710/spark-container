@@ -1,19 +1,9 @@
 {
-  "shortages": [
-    "VOW3.DE",
-    "PAH3.DE",
-    "DAI.DE",
-    "OMV.VI",
-    "TSLA",
-    "AMZN",
-    "UQA.VI",
-    "CAI.VI",
-    "IIA.VI",
-    "VIG.VI",
-    "EVN.VI",
-    "ANDR.VI",
-    "POS.VI",
-    "POST.VI",
-    "GOLD"
-  ]
+    "VOW3.DE":{"name":"VW"},
+    "PAH3.DE":{"name":"Porsche"},
+    "VOE.VI":{"name":"Voestalpine"},
+    "POST.VI":{"name":"POST.VI"},
+    "RBI.VI":{"name":"RBI.VI"},
+    "OMV.VI":{"name":"OMV.VI"},
+    "GOLD":{"name":"GOLD"}
 }
