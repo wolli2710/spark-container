@@ -1,5 +1,6 @@
 from __future__ import division
 
+from pyspark.sql import SparkSession
 import argparse
 from datetime import date
 import pyspark.sql.functions as func
@@ -7,58 +8,45 @@ import matplotlib.pyplot as plt
 import os
 import numpy as np
 import json
+import time
 import requests
 from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-
 from pyspark.sql.types import *
 import importlib
 
 class ExampleUseCase():
     float_formatter = lambda self, x: "%.2f" % x
 
-    def __init__(self, spark_session, shortage, obj):
-        self.spark_session = spark_session
-        self.shortage = shortage
-        self.obj = obj
-        self.result_file_path = self.file_path(shortage, "results/") + ".png"
+    def __init__(self, spark_session, environment):
+        ms = int(round(time.time() * 1000))
+        master = "yarn"
+        if environment == "test":
+            master = "local[*]"
+        self.spark = (SparkSession.builder
+          .master(master)
+          .appName('example_use_case_'+str(ms) )
+          .enableHiveSupport()
+          .getOrCreate())
         self.helpers = {}
+        self.data = {}
         self.load_helpers()
-        for key,method in self.helpers.items():
-            method()
 
     def load_helpers(self):
-        with open('helpers/list.json') as json_file:
+        with open('use_case/helpers/list.json') as json_file:
             data = json.load(json_file)
             for obj in data:
-                mod = importlib.import_module(obj['path'])
-                met = getattr(mod, obj['name'])
+                self.data[obj['name']] = obj
+                mod = importlib.import_module("use_case.helpers." + obj['path'])
+                met = getattr(mod, obj['prefix'])
                 self.helpers[obj['name']] = met
+
+    def run(self):
+        for helper in self.helpers:
+            self.helpers[helper]().process()
 
     def file_path(self, file_name, dir=""):
         base_path = os.path.dirname(os.path.realpath(__file__)) + "/tests/fixtures/"
         return os.path.dirname(base_path) + "/" + dir + file_name
-
-    def draw_result(self):
-        cSchema = StructType([StructField("Date", StringType())\
-                      ,StructField("Open", StringType())\
-                      ,StructField("High", StringType())\
-                      ,StructField("Low", StringType())\
-                      ,StructField("Close", StringType())\
-                      ,StructField("Adj Close", StringType())\
-                      ,StructField("Volume", StringType())])
-        dc = self.spark_session.createDataFrame(self.data, schema=cSchema)
-        y = [float(i.Close.replace(',','')) for i in dc.select("Close").collect()]
-        x = [str(i.Date ) for i in dc.select("Date").collect()]
-        plt.figure(figsize=(50,10))
-        plt.plot(x, y, '-b', label='loss')
-        plt.title(self.shortage)
-        plt.savefig(self.file_path)
-        plt.clf()
 
     def read_file(self, input_file, file_format='parquet', sep=',', encoding='utf-8'):
         if not (os.path.isfile(input_file)):
@@ -74,38 +62,45 @@ class ExampleUseCase():
         elif file_format == 'csv':
             inputData.write.csv(input_file+".csv", mode=mode, sep=';', header=True)
 
-    def get_stock_data_from_web_source(self):
-        response = requests.get("https://finance.yahoo.com/quote/"+self.shortage+"/history?p="+self.shortage)
-        self.data = self.parse_yahoo_request(response.text)
-        self.prepare_data()
 
-    def parse_yahoo_request(self, html_doc):
-        data = []
-        soup = BeautifulSoup(html_doc, 'html.parser')
-        table = soup.find('table', attrs={'data-test':'historical-prices'})
-        tbody = table.find('tbody')
-        rows = tbody.find_all('tr')
-        for row in rows:
-            cols = row.find_all('td')
-            cols = [ele.text for ele in cols]
-            self.prepare_rows(cols, data)
-        return data
 
-    def prepare_rows(self, row, data):
-        if len(row) >= 4:
-            data.insert(0, [ele.replace(",", "").replace("-", "0") for ele in row[1:-1] if ele])
 
-    def get_stock_data_from_file_source(self):
-        data = []
-        file_name = self.shortage + ".csv"
-        file_p = self.file_path(file_name, "input/")
-        result = self.read_file(file_p, "csv")
-        if result:
-            current_list = result.rdd.map(lambda row : list(row) ).collect()
-            for row in current_list:
-                self.prepare_rows(row, data)
-            self.data = data
-            self.prepare_data()
+
+    # def get_stock_data_from_web_source(self):
+    #     response = requests.get("https://finance.yahoo.com/quote/"+self.shortage+"/history?p="+self.shortage)
+    #     self.data = self.parse_yahoo_request(response.text)
+    #     self.prepare_data()
+    #
+    # def parse_yahoo_request(self, html_doc):
+    #     data = []
+    #     soup = BeautifulSoup(html_doc, 'html.parser')
+    #     table = soup.find('table', attrs={'data-test':'historical-prices'})
+    #     tbody = table.find('tbody')
+    #     rows = tbody.find_all('tr')
+    #     for row in rows:
+    #         cols = row.find_all('td')
+    #         cols = [ele.text for ele in cols]
+    #         self.prepare_rows(cols, data)
+    #     return data
+    #
+    # def prepare_rows(self, row, data):
+    #     if len(row) >= 4:
+    #         data.insert(0, [ele.replace(",", "").replace("-", "0") for ele in row[1:-1] if ele])
+    #
+
+
+
+    # def get_stock_data_from_file_source(self):
+    #     data = []
+    #     file_name = self.shortage + ".csv"
+    #     file_p = self.file_path(file_name, "input/")
+    #     result = self.read_file(file_p, "csv")
+    #     if result:
+    #         current_list = result.rdd.map(lambda row : list(row) ).collect()
+    #         for row in current_list:
+    #             self.prepare_rows(row, data)
+    #         self.data = data
+    #         self.prepare_data()
 
     def prepare_data(self):
         if( hasattr(self, "data") ):
@@ -121,8 +116,6 @@ class ExampleUseCase():
     def predict_low_cost_high_value(self):
         if( hasattr(self, "data") ):
             threshold = 80.0
-            # if(  ( any( x < threshold for x in (100/self.max) * self.last) )  ):
-            print(self.obj["name"])
             # print(self.last - self.median)
             # print(self.last - self.average)
             # print(self.median)

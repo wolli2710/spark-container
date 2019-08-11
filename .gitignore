@@ -4,6 +4,7 @@ helpers/__pycache__/*
 dist
 *.egg-info
 */__pycache__
+*/*/__pycache__
 derby.log
 metastore_db/*
 .Rproj.user
