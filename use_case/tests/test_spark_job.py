@@ -5,7 +5,9 @@ import glob
 import subprocess
 import json
 
-sys.path.append('./tests')
+sys.path.append('./use_case/tests')
+sys.path.append('./use_case/helpers')
+sys.path.append('./use_case/src')
 
 from unittest.mock import patch
 from base_spark_test import PySparkTest
@@ -49,18 +51,14 @@ class SimpleTest(PySparkTest):
     # @patch('example_use_case.ExampleUseCase.draw_result', return_value=None)
     # def test_example_use_case(self, draw_result):
     def test_get_stock_data_from_web(self):
-        use_case_objects = []
-        file_p = file_path("shortages.json", "tests/fixtures")
-        with open(file_p) as f:
-            data = json.load(f)
-        for shortage in data.keys():
-            use_case_objects.append(ExampleUseCase(spark_session=self.spark, shortage=shortage, obj=data[shortage]))
+        use_case = ExampleUseCase(spark_session=self.spark, environment="test")
+        use_case.run()
 
-        [data.get_company_list_vi("") for data in use_case_objects]
+        # [data.get_company_list() for data in use_case_objects]
 
 
-        [data.get_stock_data_from_web_source() for data in use_case_objects]
-        [data.predict_low_cost_high_value() for data in use_case_objects]
+        # [data.get_stock_data_from_web_source() for data in use_case_objects]
+        # [data.predict_low_cost_high_value() for data in use_case_objects]
 
     # def test_google_get(self):
         # print([x for x in get_code('NASDAQ')])
