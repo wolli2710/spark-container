@@ -2,6 +2,7 @@ from use_case.helpers.base import Base
 from bs4 import BeautifulSoup
 
 import os
+import time
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -40,7 +41,8 @@ class VI(Base):
     def prepare_company(self, company):
         # print(company_website)
         url = "https://www.wienerborse.at/marktdaten/aktien-sonstige/preisdaten/?ISIN=" + company
-        company_website = self.get_web_data_with_element(url, "Kürzel")
+        shortening = self.get_web_data_with_element(url, "Kürzel")
+        print(shortening)
 
     def get_web_data_with_element(self, url, element):
         self.company_data = []
@@ -50,19 +52,31 @@ class VI(Base):
         chrome_options.add_argument('--no-sandbox') # required when running as root user. otherwise you would get no sandbox errors.
 
         # driver = webdriver.Chrome(executable_path='/usr/local/bin/chromedriver', chrome_options=chrome_options, service_args=['--verbose', '--log-path=/tmp/chromedriver.log'])
-        driver = webdriver.Chrome(executable_path='/tmp/chromedriver/chromedriver', chrome_options=chrome_options, service_args=['--verbose', '--log-path=/tmp/chromedriver.log'])
+        driver = webdriver.Chrome(executable_path='/opt/chrome/chromedriver', chrome_options=chrome_options, service_args=['--verbose', '--log-path=/tmp/chromedriver.log'])
 
         driver.get(url)
+        driver.execute_script("window.scrollTo(0, 1200);")
+        time.sleep(1)
+        elem = driver.find_elements_by_xpath("//th[contains(text(), 'Kürzel')]/following-sibling::td")
+
+
+        ele = elem[0].text #.encode('utf8')
+
+        # WebElement element = driver.findElement(By.id("id_of_element"));
+
+        # element = driver.find_elements_by_xpath("//th[contains(text(), 'Kürzel')]")
+        # driver.executeScript("arguments[0].scrollIntoView(true);", element);
+        # Thread.sleep(500);
+
+
         #Wait till Javascript is loaded
-        delay = 3 # seconds
+        # WebDriverWait(driver, delay).until(EC.presence_of_element_located( driver.find_elements_by_xpath("//th[contains(text(), '"+element+"')]") ) )
         # while True:
         #     try:
         #         print(driver.find_elements_by_xpath("//th[contains(text(), 'Kürzel')]"))
-        #         WebDriverWait(driver, delay).until(EC.presence_of_element_located( driver.find_elements_by_xpath("//th[contains(text(), '"+element+"')]") ) )
         #         print("Page is ready!")
         #         break # it will break from the loop once the specific element will be present.
         #     except:
         #         print("Loading took too much time!-Try again")
-        page = driver.page_source
-        print(page)
-        return page
+
+        return ele
