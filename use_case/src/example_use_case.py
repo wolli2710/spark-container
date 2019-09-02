@@ -42,35 +42,13 @@ class ExampleUseCase():
 
     def run(self):
         for helper in self.helpers:
-            self.helpers[helper]().process()
+            self.helpers[helper]().process(self.spark)
 
     def file_path(self, file_name, dir=""):
         base_path = os.path.dirname(os.path.realpath(__file__)) + "/tests/fixtures/"
         return os.path.dirname(base_path) + "/" + dir + file_name
 
-    def read_file(self, input_file, file_format='parquet', sep=',', encoding='utf-8'):
-        if not (os.path.isfile(input_file)):
-            return
-        if file_format == 'parquet':
-            return self.spark_session.read.parquet(input_file)
-        elif file_format == 'csv':
-            return self.spark_session.read.csv(input_file, header=True, sep=sep, encoding=encoding)
 
-    def write_file(self, spark_session, input_file, inputData, file_format, mode=None):
-        if file_format == 'parquet':
-            inputData.write.parquet(input_file+".csv", mode=mode)
-        elif file_format == 'csv':
-            inputData.write.csv(input_file+".csv", mode=mode, sep=';', header=True)
-
-
-
-
-
-    # def get_stock_data_from_web_source(self):
-    #     response = requests.get("https://finance.yahoo.com/quote/"+self.shortage+"/history?p="+self.shortage)
-    #     self.data = self.parse_yahoo_request(response.text)
-    #     self.prepare_data()
-    #
     # def parse_yahoo_request(self, html_doc):
     #     data = []
     #     soup = BeautifulSoup(html_doc, 'html.parser')
