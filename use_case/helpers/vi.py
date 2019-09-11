@@ -31,16 +31,16 @@ class VI(Base):
     def prepare_company(self, company):
         # print(company_website)
         url = "https://www.wienerborse.at/marktdaten/aktien-sonstige/preisdaten/?ISIN=" + company
-        shortening = self.get_web_data_with_element(url, "Kürzel")
-        if(shortening != None):
-            data = self.get_stock_data_from_web_source(shortening+".VI")
-
-            print(shortening)
-            print(data)
-            print("#################################")
-            return {shortening: data}
-        else:
-            print("Error on company:" + company)
+        try:
+            shortening = self.get_web_data_with_element(url, "Kürzel")
+            if(shortening != None):
+                data = self.get_stock_data_from_web_source(shortening+".VI")
+                return {shortening: data}
+            else:
+                print("Error on company:" + company)
+                return None
+        except:
+            print("Connection Exception")
 
     def get_web_data_with_element(self, url, element):
         self.company_data = []
