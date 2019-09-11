@@ -1,6 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
 import numpy as np
+from functools import reduce
+from pyspark.sql import DataFrame
 
 class Base():
     float_formatter = lambda self, x: "%.2f" % x
@@ -33,28 +35,31 @@ class Base():
         page = requests.get(url)
         return page.content
 
+    def unionAll(*dfs):
+        return reduce(DataFrame.unionAll, dfs)
+
     def process(self, spark):
         self.spark = spark
         company_list = self.get_company_list()
-        company_data = []
+        initial_data = ["", 0.0, 0.0, 0.0, 0.0, 0.0]
+        company_data = self.create_data_frame(initial_data)
         for company in company_list:
-            company_data.append( self.prepare_company(company) )
-        print(company_data)
+            data = self.prepare_company(company)
+            if(data != None):
+                df = self.prepare_dataframe(data)
+                new_df = df.union(company_data)
+                company_data = new_df
+                company_data.show()
+                self.predict_low_cost_high_value(company_data)
         return company_data
 
     def get_stock_data_from_web_source(self, shortage):
         response = requests.get("https://finance.yahoo.com/quote/"+shortage+"/history?p="+shortage)
         data = self.parse_yahoo_request(response.text)
         data_object = self.prepare_data(data)
-
         input_file = "/data/test.csv"
-        # input_data = self.spark.createDataFrame([("nix")], ["a"])
-
-        # input_data = self.spark.createDataFrame(data_object, ["average", "median", "max", "std", "last"])
         file_format = "csv"
         mode = "append"
-
-        # self.write_file(input_file, input_data, file_format, mode)
         return data_object
 
     def parse_yahoo_request(self, html_doc):
@@ -77,23 +82,29 @@ class Base():
         n = np.array(data)
         np.set_printoptions(formatter={'float_kind': self.float_formatter})
         n = n.astype(np.float)
-        #TODO export raw data
-
         return self.prepare_object(n)
 
-    def predict_low_cost_high_value(self):
-        if( hasattr(self, "data") ):
-            threshold = 80.0
-            # print(self.last - self.median)
-            # print(self.last - self.average)
-            # print(self.median)
-            # print(self.average)
-            # print(self.last)
-            # print(self.std)
-            print(self.max)
-            print(self.last)
-            print( ( (100/self.average) * self.last ) )
-            print( ( (100/self.max) * self.last ) )
+    def create_data_frame(self, result):
+        columns = ["company", "max", "median", "last", "average", "std"]
+        return self.spark.createDataFrame([(result)], schema=columns)
+
+    def predict_low_cost_high_value(self, df):
+        result = df.agg({"average": "max"}).collect()[0]
+        print(result)
+
+    def prepare_dataframe(self, data_list):
+        threshold = 80.0
+        for key, val in data_list.items():
+            data = val
+            result = [
+                key,
+                data["max"][0].item(),
+                data["median"][0].item(),
+                data["last"][0].item(),
+                data["average"][0].item(),
+                data["std"][0].item(),
+            ]
+        return self.create_data_frame(result)
 
     def prepare_object(self, data_array):
         average = np.average(data_array, axis=0)
