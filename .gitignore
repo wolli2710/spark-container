@@ -8,3 +8,4 @@ dist
 derby.log
 metastore_db/*
 .Rproj.user
+stocks/*
