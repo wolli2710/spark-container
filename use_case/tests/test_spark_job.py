@@ -51,7 +51,9 @@ class SimpleTest(PySparkTest):
     # @patch('example_use_case.ExampleUseCase.draw_result', return_value=None)
     # def test_example_use_case(self, draw_result):
     def test_get_stock_data_from_web(self):
-        use_case = ExampleUseCase(spark_session=self.spark, environment="test")
+        source = "/data/stocks/"
+        destination = ""
+        use_case = ExampleUseCase(spark_session=self.spark, environment="test", source=source, destination=destination)
         use_case.run()
 
         # [data.get_company_list() for data in use_case_objects]

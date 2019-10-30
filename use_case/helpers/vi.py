@@ -1,4 +1,5 @@
 from use_case.helpers.base import Base
+from use_case.helpers.base_ingest import BaseIngest
 from bs4 import BeautifulSoup
 import os
 import time
@@ -8,9 +9,10 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-class VI(Base):
+class VI(Base, BaseIngest):
     def __init__(self):
         Base()
+        BaseIngest()
         print("vi")
 
     def get_company_list(self):
@@ -28,19 +30,33 @@ class VI(Base):
                 tds.append(result[0].getText())
         return tds
 
-    def prepare_company(self, company):
-        # print(company_website)
+    def get_shortening(self, company):
         url = "https://www.wienerborse.at/marktdaten/aktien-sonstige/preisdaten/?ISIN=" + company
         try:
             shortening = self.get_web_data_with_element(url, "Kürzel")
-            if(shortening != None):
-                data = self.get_stock_data_from_web_source(shortening+".VI")
-                return {shortening: data}
-            else:
-                print("Error on company:" + company)
-                return None
+            return shortening + ".VI"
         except:
-            print("Connection Exception")
+            print("get web data exception")
+            return None
+
+    def prepare_company(self, company):
+        shortening = self.get_shortening(company)
+        if(shortening != None):
+            try:
+                if(shortening != None):
+                    data = self.get_stock_data_from_web_source(shortening)
+
+                    # aggregation_object = self.prepare_aggregation_results(data)
+                    # print(aggregation_object)
+
+                    # data_object = self.prepare_data(data, shortening)
+                    # return data_object
+                    return {shortening: data}
+                else:
+                    print("Error on company:" + company)
+                    return None
+            except:
+                print("Connection Exception")
 
     def get_web_data_with_element(self, url, element):
         self.company_data = []
