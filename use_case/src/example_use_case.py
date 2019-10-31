@@ -49,6 +49,7 @@ class ExampleUseCase():
         for helper in self.helpers:
             self.helpers[helper]().process(self.spark, self.source)
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-source', required=True)
@@ -67,5 +68,6 @@ if __name__ == '__main__':
         master = 'local'
 
     spark_session = spark_session.builder.master(master).appName('example_use_case').getOrCreate()
-    ExampleUseCase(spark_session=spark_session, environment="prod", source=source, destination=destination)
+    use_case = ExampleUseCase(spark_session=spark_session, environment="prod", source=source, destination=destination)
+    use_case.run()
     spark_session.stop()
