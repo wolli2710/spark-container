@@ -16,7 +16,8 @@ class BaseIngest():
             data = self.prepare_company(company)
             if(data != None):
                 shortening_full = list(data)[0]
-                columns = StructType([StructField("open", StringType())\
+                columns = StructType([StructField("date", StringType())\
+                                    ,StructField("open", StringType())\
                                     ,StructField("high", StringType())\
                                     ,StructField("low", StringType())\
                                     ,StructField("close", StringType())\
