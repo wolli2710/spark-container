@@ -96,7 +96,7 @@ class Base():
 
     def prepare_rows(self, row, data):
         if len(row) >= 4:
-            data.insert(0, [ele.replace(",", "").replace("-", "0") for ele in row[1:-1] if ele])
+            data.insert(0, [ele.replace(",", "").replace("-", "0") for ele in row[0:-1] if ele])
         else:
             self.handle_dividendes(row)
 
