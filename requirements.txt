@@ -9,7 +9,9 @@ requests
 selenium
 pyalgotrade
 googlefinance.get
+googlefinance.client
 lxml
+hjson
 
 #
 ###### Requirements with Version Specifiers ######

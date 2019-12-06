@@ -14,6 +14,10 @@ class VI(Base, BaseIngest):
         Base()
         BaseIngest()
         print("vi")
+        chrome_options = webdriver.ChromeOptions()
+        chrome_options.add_argument('--headless')
+        chrome_options.add_argument('--no-sandbox') # required when running as root user. otherwise you would get no sandbox errors.
+        self.driver = webdriver.Chrome(executable_path='/opt/chrome/chromedriver', chrome_options=chrome_options, service_args=['--verbose', '--log-path=/tmp/chromedriver.log'])
 
     def get_company_list(self):
         data = self.get_web_data("https://www.wienerborse.at/emittenten/aktien/unternehmensliste/")
@@ -32,6 +36,7 @@ class VI(Base, BaseIngest):
 
     def get_shortening(self, company):
         url = "https://www.wienerborse.at/marktdaten/aktien-sonstige/preisdaten/?ISIN=" + company
+        shortening = self.get_web_data_with_element(url, "Kürzel")
         try:
             shortening = self.get_web_data_with_element(url, "Kürzel")
             return shortening + ".VI"
@@ -45,12 +50,6 @@ class VI(Base, BaseIngest):
             try:
                 if(shortening != None):
                     data = self.get_stock_data_from_web_source(shortening)
-
-                    # aggregation_object = self.prepare_aggregation_results(data)
-                    # print(aggregation_object)
-
-                    # data_object = self.prepare_data(data, shortening)
-                    # return data_object
                     return {shortening: data}
                 else:
                     print("Error on company:" + company)
@@ -60,15 +59,10 @@ class VI(Base, BaseIngest):
 
     def get_web_data_with_element(self, url, element):
         self.company_data = []
-        chrome_options = webdriver.ChromeOptions()
-        chrome_options.add_argument('--headless')
-        chrome_options.add_argument('--no-sandbox') # required when running as root user. otherwise you would get no sandbox errors.
-        # driver = webdriver.Chrome(executable_path='/usr/local/bin/chromedriver', chrome_options=chrome_options, service_args=['--verbose', '--log-path=/tmp/chromedriver.log'])
-        driver = webdriver.Chrome(executable_path='/opt/chrome/chromedriver', chrome_options=chrome_options, service_args=['--verbose', '--log-path=/tmp/chromedriver.log'])
-        driver.get(url)
-        driver.execute_script("window.scrollTo(0, 1200);")
+        self.driver.get(url)
+        self.driver.execute_script("window.scrollTo(0, 1200);")
         time.sleep(1)
-        elem = driver.find_elements_by_xpath("//th[contains(text(), 'Kürzel')]/following-sibling::td")
+        elem = self.driver.find_elements_by_xpath("//th[contains(text(), 'Kürzel')]/following-sibling::td")
         if(len(elem) > 0):
             ele = elem[0].text
             return ele
