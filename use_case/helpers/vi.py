@@ -49,8 +49,7 @@ class VI(Base, BaseIngest):
         if(shortening != None):
             try:
                 if(shortening != None):
-                    data = self.get_stock_data_from_web_source(shortening)
-                    return {shortening: data}
+                    self.get_stock_data_from_web_source(shortening)
                 else:
                     print("Error on company:" + company)
                     return None

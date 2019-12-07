@@ -70,10 +70,6 @@ class Base():
         else:
             self.handle_dividendes(row)
 
-    def handle_dividendes(self):
-        print(row)
-        print("TODO: handle_dividendes")
-
     def create_data_frame(self, data, schema=None):
         if schema != None:
             columns = schema

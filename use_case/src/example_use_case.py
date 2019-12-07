@@ -43,11 +43,11 @@ class ExampleUseCase():
                 self.helpers[obj['name']] = met
 
     def run(self):
-        # for helper in self.helpers:
-        #     self.helpers[helper]().ingest(self.spark)
-        # return
         for helper in self.helpers:
-            self.helpers[helper]().process(self.spark, self.source)
+            self.helpers[helper]().ingest(self.spark)
+        # return
+        # for helper in self.helpers:
+            # self.helpers[helper]().process(self.spark, self.source)
 
 
 if __name__ == '__main__':
