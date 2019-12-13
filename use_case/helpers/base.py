@@ -5,7 +5,7 @@ from functools import reduce
 from pyspark.sql import DataFrame
 import os
 from pyspark.sql import functions as F
-
+import pandas as pd
 
 class Base():
     float_formatter = lambda self, x: "%.2f" % x
@@ -17,14 +17,14 @@ class Base():
 
         for company in company_list:
             shortening = self.get_shortening(company)
-            print(shortening)
             if(shortening != None):
                 df = self.load_company(shortening)
-                if(df != None):
+                print(shortening)
+                # if(df != None):
+                if isinstance(df, pd.DataFrame):
                     # numpy_array = self.prepare_data(df)
                     result_df = self.prepare_dataframe(df)
-                    print(shortening)
-                    result_df.show()
+                    print(result_df)
                     # self.predict_low_cost_high_value(df)
 
     def load_company(self, company):
@@ -37,10 +37,11 @@ class Base():
         if not (os.path.isfile(input_file) or os.path.isdir(input_file)):
             print("File not found")
             return None
-        if file_format == 'parquet':
-            return self.spark.read.parquet(input_file)
+        # if file_format == 'parquet':
+        #     return self.spark.read.parquet(input_file)
         elif file_format == 'csv':
-            return self.spark.read.csv(input_file, header=True, sep=sep, encoding=encoding)
+            # return self.spark.read.csv(input_file, header=True, sep=sep, encoding=encoding)
+            return pd.read_csv(input_file, sep=sep, encoding=encoding)
 
     def write_file(self, input_file, input_data, file_format, mode=None):
         print("file write")
@@ -82,19 +83,5 @@ class Base():
         print(result)
 
     def prepare_dataframe(self, df):
-        return df.agg(F.max('close'), F.min('close'), F.avg('close'), F.stddev('close') )
-
-    def prepare_aggregation_results(self, data_array):
-        average = np.average(data_array, axis=0)
-        median = np.median(data_array, axis=0)
-        max = np.max(data_array, axis=0)
-        std = np.std(data_array, axis=0)
-        last = data_array[-1]
-        obj = {
-            "average": average,
-            "median": median,
-            "max": max,
-            "std": std,
-            "last": last
-        }
-        return obj
+        # return df.agg(F.max('close'), F.min('close'), F.avg('close'), F.stddev('close') )
+        return df.sort('timestamp').agg({"close":['max','min', 'mean', 'median'] })
