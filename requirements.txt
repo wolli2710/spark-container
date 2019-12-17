@@ -2,6 +2,7 @@ numpy
 pytest-spark
 pyspark
 pandas
+pandas-ta
 matplotlib
 numpy
 beautifulsoup4

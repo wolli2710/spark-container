@@ -6,6 +6,7 @@ from pyspark.sql import DataFrame
 import os
 from pyspark.sql import functions as F
 import pandas as pd
+import pandas_ta as ta
 
 class Base():
     float_formatter = lambda self, x: "%.2f" % x
@@ -83,5 +84,16 @@ class Base():
         print(result)
 
     def prepare_dataframe(self, df):
+        last1 = df.iloc[-1]
+        last2 = df.iloc[-2]
+        print("******************************")
+        # print(last['close'].item())
+        print( last1['close'] )
+        print( last2['close'] )
+        print(df.ta.sma())
+        print(df.ta.ema())
+        print(df.sort_values('timestamp')[df['timestamp']>1476397546].ta.ema())
+        print("******************************")
+
         # return df.agg(F.max('close'), F.min('close'), F.avg('close'), F.stddev('close') )
-        return df.sort('timestamp').agg({"close":['max','min', 'mean', 'median'] })
+        return df.sort_values('timestamp')[df['timestamp']>1476397546].agg({"close":['max','min', 'mean', 'median', 'std'] })
